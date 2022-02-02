@@ -9,19 +9,18 @@
            [javax.servlet.http HttpServlet
                                HttpServletRequest
                                HttpServletResponse]))
-
 (defn- get-headers
   "Creates a name/value map of all the request headers."
   [^HttpServletRequest request]
-  (reduce
-    (fn [headers, ^String name]
-      (assoc headers
-        (.toLowerCase name Locale/ENGLISH)
-        (->> (.getHeaders request name)
-             (enumeration-seq)
-             (string/join ","))))
-    {}
-    (enumeration-seq (.getHeaderNames request))))
+  (->> (enumeration-seq (.getHeaderNames request))
+       (reduce (fn [headers, ^String name]
+                 (assoc! headers
+                   (.toLowerCase name Locale/ENGLISH)
+                   (->> (.getHeaders request name)
+                        (enumeration-seq)
+                        (string/join ","))))
+               (transient {}))
+       persistent!))
 
 (defn- get-content-length
   "Returns the content length, or nil if there is no content."
