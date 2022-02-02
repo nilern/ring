@@ -69,11 +69,12 @@
 (defn- set-headers
   "Update a HttpServletResponse with a map of headers."
   [^HttpServletResponse response, headers]
-  (doseq [[key val-or-vals] headers]
-    (if (string? val-or-vals)
-      (.setHeader response key val-or-vals)
-      (doseq [val val-or-vals]
-        (.addHeader response key val))))
+  (reduce-kv (fn [_ key val-or-vals]
+               (if (string? val-or-vals)
+                 (.setHeader response key val-or-vals)
+                 (run! (fn [val] (.addHeader response key val))
+                       val-or-vals)))
+             nil headers)
   ; Some headers must be set through specific methods
   (when-let [content-type (get headers "Content-Type")]
     (.setContentType response content-type)))
